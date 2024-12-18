@@ -1,3 +1,25 @@
+"""
+This module provides an abstract base class `Approach` for integrating search and OpenAI functionalities,
+along with data structures and helper methods to facilitate the implementation of various search and AI-driven
+approaches.
+Classes:
+    Document: Represents a document with various attributes including content, embeddings, and metadata.
+    ThoughtStep: Represents a step in a thought process with a title, description, and optional properties.
+    Approach: Abstract base class providing a framework for integrating search and OpenAI functionalities.
+Functions:
+    Document.serialize_for_results: Serializes the document for result representation.
+    Document.trim_embedding: Trims the embedding list for concise representation.
+    Approach.__init__: Initializes the Approach class with necessary clients and configurations.
+    Approach.build_filter: Constructs a filter string based on provided overrides and authentication claims.
+    Approach.search: Performs a search operation using the specified parameters and returns a list of qualified documents.
+    Approach.get_sources_content: Retrieves the content of the sources from the search results, optionally using semantic captions and image citations.
+    Approach.get_citation: Generates a citation string for the given source page, optionally using image citation format.
+    Approach.compute_text_embedding: Computes the text embedding for the given query string using the specified embedding model.
+    Approach.compute_image_embedding: Computes the image embedding for the given query string using the vision endpoint.
+    Approach.run: Abstract method to be implemented by subclasses to run the approach with the given messages and context.
+    Approach.run_stream: Abstract method to be implemented by subclasses to run the approach with the given messages and context, yielding results as an asynchronous stream.
+"""
+
 import os
 from abc import ABC
 from dataclasses import dataclass
@@ -30,6 +52,41 @@ from text import nonewlines
 
 @dataclass
 class Document:
+    """
+    A class to represent a document with various attributes and methods to serialize and process embeddings.
+    Attributes:
+    -----------
+    id : Optional[str]
+        The unique identifier of the document.
+    content : Optional[str]
+        The content of the document.
+    embedding : Optional[List[float]]
+        The vector embedding of the document content.
+    image_embedding : Optional[List[float]]
+        The vector embedding of the document image.
+    category : Optional[str]
+        The category of the document.
+    sourcepage : Optional[str]
+        The source page of the document.
+    sourcefile : Optional[str]
+        The source file of the document.
+    oids : Optional[List[str]]
+        The list of object IDs associated with the document.
+    groups : Optional[List[str]]
+        The list of groups associated with the document.
+    captions : List[QueryCaptionResult]
+        The list of caption results for the document.
+    score : Optional[float]
+        The score of the document.
+    reranker_score : Optional[float]
+        The reranker score of the document.
+    Methods:
+    --------
+    serialize_for_results() -> dict[str, Any]:
+        Serializes the document attributes into a dictionary format suitable for results.
+    trim_embedding(cls, embedding: Optional[List[float]]) -> Optional[str]:
+        Returns a trimmed list of floats from the vector embedding.
+    """
     id: Optional[str]
     content: Optional[str]
     embedding: Optional[List[float]]
@@ -91,6 +148,30 @@ class ThoughtStep:
 
 
 class Approach(ABC):
+    """
+    Approach class provides a framework for integrating search and OpenAI functionalities.
+    Attributes:
+        ALLOW_NON_GPT_MODELS (bool): Allows usage of non-GPT models even if no tokenizer is available for accurate token counting.
+    Methods:
+        __init__(search_client, openai_client, auth_helper, query_language, query_speller, embedding_deployment, embedding_model, embedding_dimensions, openai_host, vision_endpoint, vision_token_provider):
+            Initializes the Approach class with necessary clients and configurations.
+        build_filter(overrides, auth_claims) -> Optional[str]:
+            Constructs a filter string based on provided overrides and authentication claims.
+        search(top, query_text, filter, vectors, use_text_search, use_vector_search, use_semantic_ranker, use_semantic_captions, minimum_search_score, minimum_reranker_score) -> List[Document]:
+            Performs a search operation using the specified parameters and returns a list of qualified documents.
+        get_sources_content(results, use_semantic_captions, use_image_citation) -> list[str]:
+            Retrieves the content of the sources from the search results, optionally using semantic captions and image citations.
+        get_citation(sourcepage, use_image_citation) -> str:
+            Generates a citation string for the given source page, optionally using image citation format.
+        compute_text_embedding(q: str):
+            Computes the text embedding for the given query string using the specified embedding model.
+        compute_image_embedding(q: str):
+            Computes the image embedding for the given query string using the vision endpoint.
+        run(messages, session_state=None, context={}) -> dict[str, Any]:
+            Abstract method to be implemented by subclasses to run the approach with the given messages and context.
+        run_stream(messages, session_state=None, context={}) -> AsyncGenerator[dict[str, Any], None]:
+            Abstract method to be implemented by subclasses to run the approach with the given messages and context, yielding results as an asynchronous stream.
+    """
 
     # Allows usage of non-GPT model even if no tokenizer is available for accurate token counting
     # Useful for using local small language models, for example
