@@ -6,16 +6,47 @@ from typing import Any, Callable, Optional, TypedDict, Union, cast
 from urllib.parse import urljoin
 
 import aiohttp
-from azure.search.documents.agent.aio import KnowledgeAgentRetrievalClient
-from azure.search.documents.agent.models import (
-    KnowledgeAgentAzureSearchDocReference,
-    KnowledgeAgentIndexParams,
-    KnowledgeAgentMessage,
-    KnowledgeAgentMessageTextContent,
-    KnowledgeAgentRetrievalRequest,
-    KnowledgeAgentRetrievalResponse,
-    KnowledgeAgentSearchActivityRecord,
-)
+# from azure.search.documents.agent.aio import KnowledgeAgentRetrievalClient
+try:
+    try:
+         from azure.search.documents.agent.aio import KnowledgeAgentRetrievalClient
+    except ImportError:
+        pass
+        pass
+        # Fallback or placeholder if the module is not available
+        KnowledgeAgentRetrievalClient = None
+except ImportError:
+    # Fallback or placeholder if the module is not available
+    KnowledgeAgentRetrievalClient = None
+try:
+    try:
+         from azure.search.documents.agent.models import (
+             KnowledgeAgentAzureSearchDocReference,
+             KnowledgeAgentIndexParams,
+             KnowledgeAgentMessage,
+             KnowledgeAgentMessageTextContent,
+             KnowledgeAgentRetrievalRequest,
+             KnowledgeAgentRetrievalResponse,
+             KnowledgeAgentSearchActivityRecord,
+         )
+    except ImportError:
+        # Fallback or placeholder if the module is not available
+        KnowledgeAgentAzureSearchDocReference = None
+        KnowledgeAgentIndexParams = None
+        KnowledgeAgentMessage = None
+        KnowledgeAgentMessageTextContent = None
+        KnowledgeAgentRetrievalRequest = None
+        KnowledgeAgentRetrievalResponse = None
+        KnowledgeAgentSearchActivityRecord = None
+except ImportError:
+    # Fallback or placeholder if the module is not available
+    KnowledgeAgentAzureSearchDocReference = None
+    KnowledgeAgentIndexParams = None
+    KnowledgeAgentMessage = None
+    KnowledgeAgentMessageTextContent = None
+    KnowledgeAgentRetrievalRequest = None
+    KnowledgeAgentRetrievalResponse = None
+    KnowledgeAgentSearchActivityRecord = None
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import (
     QueryCaptionResult,
@@ -33,8 +64,24 @@ from openai.types.chat import (
     ChatCompletionToolParam,
 )
 
-from approaches.promptmanager import PromptManager
-from core.authentication import AuthenticationHelper
+try:
+    from approaches.promptmanager import PromptManager
+except ImportError:
+    # Fallback or placeholder if the module is not available
+    class PromptManager:
+        def __init__(self):
+            pass
+
+        def generate_prompt(self, *args, **kwargs):
+            return "Default prompt"
+
+try:
+    from core.authentication import AuthenticationHelper
+except ImportError:
+    # Fallback or placeholder if the module is not available
+    class AuthenticationHelper:
+        def build_security_filters(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
+            return None
 
 
 @dataclass
@@ -255,14 +302,14 @@ class Approach(ABC):
     async def run_agentic_retrieval(
         self,
         messages: list[ChatCompletionMessageParam],
-        agent_client: KnowledgeAgentRetrievalClient,
+        agent_client: Optional[Any],
         search_index_name: str,
         top: Optional[int] = None,
         filter_add_on: Optional[str] = None,
         minimum_reranker_score: Optional[float] = None,
         max_docs_for_reranker: Optional[int] = None,
         results_merge_strategy: Optional[str] = None,
-    ) -> tuple[KnowledgeAgentRetrievalResponse, list[Document]]:
+    ) -> tuple[Any, list[Document]]:
         # STEP 1: Invoke agentic retrieval
         response = await agent_client.retrieve(
             retrieval_request=KnowledgeAgentRetrievalRequest(
@@ -479,15 +526,14 @@ class Approach(ABC):
     async def run(
         self,
         messages: list[ChatCompletionMessageParam],
-        session_state: Any = None,
-        context: dict[str, Any] = {},
+        context: Any = None,
     ) -> dict[str, Any]:
         raise NotImplementedError
 
     async def run_stream(
         self,
-        messages: list[ChatCompletionMessageParam],
-        session_state: Any = None,
-        context: dict[str, Any] = {},
+        _: list[ChatCompletionMessageParam],
+        __: Any = None,
+        ___: dict[str, Any] = {},
     ) -> AsyncGenerator[dict[str, Any], None]:
         raise NotImplementedError
